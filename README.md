@@ -1,2 +1,2 @@
-# google-foobar
-Google foo.bar coding challenge
+# Google Foo.bar
+Google foo.bar coding challenge.
