@@ -5,11 +5,10 @@ This is a standard max flow problem.
 2. Join all sinks with a single artificial sink node child;
 3. Run a max flow algorithm (e.g., Ford-Fulkerson);
 """
-from queue import Queue
 INF_FLOW = float("+inf")
 
 class Node:
-    def __init__(self, id, edges: dict[int, int]):
+    def __init__(self, id, edges):  # edges: dict[int, int]
         self.id = id
         self.edges = edges  # Dictionary of (destination_node_id -> edge_capacity)
     
@@ -21,26 +20,49 @@ class Node:
         if self.edges[dest] == 0:
             self.edges.pop(dest)
 
-def find_path_dfs(src, dst, all_nodes) -> tuple[list[str], int]:
+def find_path_dfs(src, dst, all_nodes, visited=None): # -> tuple[list[str], int]:
     """Runs DFS to find a path from source to destination.
-    
-    Returns a tuple: (path, max_flow)
-    - path: the ordered list of node ids;
-    - max_flow: the maximum flow that passes through this path
-    (i.e., the edge with lowest capacity);
+    We need a "visited" array in case of loops.
 
-    We would need a "visited" array in case of loops.
+    Parameters
+    ----------
+    src : string
+        ID of the source node.
+    dst : string
+        ID of the destination node.
+    all_nodes : dict[string, Node]
+        Dictionary containing all nodes.
+    visited : list[bool], optional
+        Boolean array to save which nodes were already visited.
+
+    Returns
+    -------
+    tuple[list[str], int] or None
+        Returns None if no path was found;
+        Else, returns a tuple (path, capacity):
+        - path: the ordered list of node ids;
+        - capacity: the maximum flow that passes through this path
+        (i.e., the edge with lowest capacity);
     """
     src_node = all_nodes[src]
     src_edges = src_node.edges
+
+    # Mark source node as visited
+    if visited is None:
+        visited = {node: False for node in all_nodes}
+    visited[src] = True
 
     for edge, edge_capacity in src_edges.items():
         # Base case
         if edge == dst: # Found a path
             return [dst], edge_capacity
 
+        # Node already explored, skip
+        if visited[edge]:
+            continue
+
         # Recursive case
-        ret = find_path_dfs(edge, dst, all_nodes)
+        ret = find_path_dfs(edge, dst, all_nodes, visited)
         if ret is None: # No path found via edge
             continue
         else:           # Path found!
@@ -49,7 +71,7 @@ def find_path_dfs(src, dst, all_nodes) -> tuple[list[str], int]:
     
     return None # No path to dst node
 
-def ford_fulkerson_max_flow(src, dst, all_nodes: dict):
+def ford_fulkerson_max_flow(src, dst, all_nodes):
     """Runs the Ford-Fulkerson max flow algorithm.
 
     1. Find a path from source to sink, with all edges carrying
@@ -57,7 +79,21 @@ def ford_fulkerson_max_flow(src, dst, all_nodes: dict):
     2. Subtract p from all edges of that path, and add p to the
     total flow;
     3. Repeat until there are no more paths from source to sink;
-    """
+
+    Parameters
+    ----------
+    src : string
+        ID of source node.
+    dst : string
+        ID of destination node.
+    all_nodes : dict[string, Node]
+        Dictionary of node ID to node object.
+
+    Returns
+    -------
+    int
+        The maximum flow from src to dst.
+    """    
     total_flow = 0
 
     while True:
@@ -89,7 +125,8 @@ def solution(entrances, exits, path):
     source = Node(id="source", edges={str(e): INF_FLOW for e in entrances})
     sink = Node(id="sink", edges={})
 
-    all_nodes: dict[str, Node] = {
+    # all_nodes: dict[str, Node]
+    all_nodes = {
         source.id: source,
         sink.id: sink,
     }
