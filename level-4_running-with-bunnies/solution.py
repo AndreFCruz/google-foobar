@@ -14,6 +14,9 @@ Method:
   > (need to update allowed time with the first and last edge - to the 1st bunny and to the door);
 """
 
+from itertools import permutations, chain
+
+
 INF = float("inf")
 
 
@@ -74,8 +77,17 @@ def subsets(set_of_elements):
         # All sets without elem
         subsets_without_elem = subsets(set_of_elements - {elem})
         all_subsets.extend(subsets_without_elem)
-    
-    return all_subsets
+
+    return all_subsets  # TODO: fix this algorithm, it currently yields repeated subsets
+
+
+def compute_path_cost(path, distances):
+    cost = 0
+    for idx in range(1, len(path)):
+        src = path[idx-1]
+        dst = path[idx]
+        cost += distances[src][dst]
+    return cost
 
 
 def solution(times, times_limit):
@@ -91,14 +103,29 @@ def solution(times, times_limit):
     except ValueError as err:
         # Negative-weight cycle - release all the bunnies
         return [n for n in range(len(times) - 2)]
+    
+    # Helpers
+    START_NODE = 0
+    END_NODE = total_nodes - 1
 
     # Enumerate all paths between the bunnies, starting with paths that pass through all nodes
     # Return the first path that fulfills the time limit
-    nodes_with_bunnies = {n for n in range(total_nodes)} - {0} - {total_nodes-1}
-    print(subsets(nodes_with_bunnies))
-    # for subst in subsets(nodes_with_bunnies):
-    #     print(subst)
+    nodes_with_bunnies = {n for n in range(total_nodes)} - {START_NODE} - {END_NODE}
+    possible_bunny_sets = subsets(nodes_with_bunnies)
 
+    # Sort in descending order of size, so the first feasible solution we find will be the optimal
+    # From the problem set: "If there are multiple sets of bunnies of the same size, return the
+    # set of bunnies with the lowest worker IDs (as indexes) in sorted order."
+    custom_key = lambda subst: len(subst) * 1e6 - sum(subst)
+    possible_bunny_sets.sort(key=custom_key, reverse=True)
+
+    for nodes_in_path in possible_bunny_sets:
+        for path in permutations(nodes_in_path):
+            cost = compute_path_cost((START_NODE,) + path + (END_NODE,), distances)
+            if cost <= times_limit:
+                return list(n-1 for n in nodes_in_path) # bunny_id == node_idx - 1
+    
+    return []
 
 
 if __name__ == "__main__":
