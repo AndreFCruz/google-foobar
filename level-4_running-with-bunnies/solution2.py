@@ -5,7 +5,7 @@ def floid_warshal(graph):
     # Our initial minimal distance matrix are the direct edges themselves
     dist = []
     for node in graph:
-        # Python 2 friendly way of copying the 
+        # Python 2 friendly way of copying a list
         dist.append(node[:])
 
     # The flow warshal algorithm, performance O(N^3), textbook stuff
@@ -96,11 +96,10 @@ def path_output_format(path):
     """
     Helper method that takes the given path and returns it in the desired
     problem output format.
+    The bunnies should also always be given in sorted order, even if that was
+    not the order they are in the path
     """
-    res = []
-    for i in range(1, len(path) - 1):
-        res.append(path[i] - 1)
-    return res
+    return sorted([node_idx - 1 for node_idx in path[1:-1]])
 
 
 def solution(times, times_limit):
